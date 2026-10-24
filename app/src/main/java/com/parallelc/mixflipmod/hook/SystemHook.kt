@@ -37,6 +37,9 @@ object SystemHook {
         safeHook("[android] ${Prefs.SYSTEM_FLIP_IME_PKG}") { hookFlipInputMethod(param) }
         safeHook("[android] ${Prefs.SYSTEM_FLIP_SCREEN_MODE}") { hookFlipScreenMode(param) }
         safeHook("[android] ${Prefs.SYSTEM_FLIP_IME_INSETS_FIX}") { hookFlipImeInsetsFix(param) }
+        safeHook("[android] ${Prefs.SYSTEM_GBOARD_CUTOUT_FIX}") {
+            GboardWindowHook.hook(param) { systemGboardCutoutFixEnabled }
+        }
     }
 
     // ── Prefs cache ──────────────────────────────────────────────
@@ -55,6 +58,7 @@ object SystemHook {
         systemCompatConfigEnabled = prefs.getBoolean(Prefs.SYSTEM_COMPAT_CONFIG, false)
         systemFlipContinuityEnabled = prefs.getBoolean(Prefs.SYSTEM_FLIP_CONTINUITY, false)
         systemFlipImeInsetsFixEnabled = prefs.getBoolean(Prefs.SYSTEM_FLIP_IME_INSETS_FIX, false)
+        systemGboardCutoutFixEnabled = prefs.getBoolean(Prefs.SYSTEM_GBOARD_CUTOUT_FIX, false)
         flipInputMethodPackageCache = normalizeFlipInputMethodPackage(
             prefs.getString(Prefs.SYSTEM_FLIP_IME_PKG, Prefs.DEFAULT_FLIP_IME_PKG)
         )
@@ -82,6 +86,9 @@ object SystemHook {
             }
             key == Prefs.SYSTEM_FLIP_IME_INSETS_FIX -> {
                 systemFlipImeInsetsFixEnabled = prefs.getBoolean(key, false)
+            }
+            key == Prefs.SYSTEM_GBOARD_CUTOUT_FIX -> {
+                systemGboardCutoutFixEnabled = prefs.getBoolean(key, false)
             }
             key == Prefs.SYSTEM_FLIP_IME_PKG -> {
                 flipInputMethodPackageCache = normalizeFlipInputMethodPackage(
@@ -501,6 +508,8 @@ object SystemHook {
     private var systemFlipContinuityEnabled = false
     @Volatile
     private var systemFlipImeInsetsFixEnabled = false
+    @Volatile
+    private var systemGboardCutoutFixEnabled = false
     @Volatile
     private var flipInputMethodPackageCache = Prefs.DEFAULT_FLIP_IME_PKG
     @Volatile

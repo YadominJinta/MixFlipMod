@@ -7,6 +7,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.parallelc.mixflipmod.Prefs
+import com.parallelc.mixflipmod.hook.GboardHook
 import com.parallelc.mixflipmod.model.AppConfig
 import com.parallelc.mixflipmod.model.PrefSpec
 import com.parallelc.mixflipmod.model.appConfigs
@@ -71,17 +72,20 @@ fun checkEnabledScopes(service: XposedService, prefs: SharedPreferences) {
             }
         }
     }.distinct()
-    requestMissingScopes(service, enabledScopePackages)
+    requestMissingScopes(service, enabledScopePackages + extraScopes(prefs))
 }
 
 fun checkScopes(service: XposedService?, scopePackages: List<String>, enabled: Boolean) {
     if (!enabled || service == null) return
-    requestMissingScopes(service, scopePackages)
+    requestMissingScopes(service, scopePackages + extraScopes(service.getRemotePreferences(Prefs.NAME)))
 }
+
+private fun extraScopes(prefs: SharedPreferences): List<String> =
+    if (prefs.getBoolean(Prefs.SYSTEM_GBOARD_CUTOUT_FIX, false)) listOf("system", GboardHook.PACKAGE) else emptyList()
 
 private fun requestMissingScopes(service: XposedService, packages: List<String>) {
     val scope = service.scope
-    val missingPackages = packages.filterNot { it in scope }
+    val missingPackages = packages.distinct().filterNot { it in scope }
     if (missingPackages.isNotEmpty()) {
         service.requestScope(missingPackages, object : OnScopeEventListener {})
     }

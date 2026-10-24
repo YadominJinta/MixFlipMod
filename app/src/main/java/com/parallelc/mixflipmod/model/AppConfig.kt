@@ -183,6 +183,13 @@ private val sogouConfig = AppConfig(
     ),
 )
 
+private val gboardConfig = AppConfig(
+    packageName = "com.google.android.inputmethod.latin",
+    prefs = listOf(
+        PrefSpec.Switch(Prefs.SYSTEM_GBOARD_CUTOUT_FIX, R.string.pref_system_gboard_cutout_fix, R.string.pref_system_gboard_cutout_fix_summary),
+    ),
+)
+
 internal val configNodes = listOf(
     ConfigNode.Group(
         id = "hide_outer",
@@ -195,6 +202,7 @@ internal val configNodes = listOf(
     ConfigNode.Package(flipHomeConfig),
     ConfigNode.Package(personalAssistantConfig),
     ConfigNode.Package(sogouConfig),
+    ConfigNode.Package(gboardConfig),
 )
 
 internal val appConfigs = configNodes.flatMap { it.packages }

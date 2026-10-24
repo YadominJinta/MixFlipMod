@@ -1,6 +1,7 @@
 package com.parallelc.mixflipmod
 
 import com.parallelc.mixflipmod.hook.FlipHomeHook
+import com.parallelc.mixflipmod.hook.GboardHook
 import com.parallelc.mixflipmod.hook.HideOuterHook
 import com.parallelc.mixflipmod.hook.PersonalAssistantHook
 import com.parallelc.mixflipmod.hook.SogouHook
@@ -33,6 +34,7 @@ class Main : XposedModule() {
 
     override fun onPackageReady(param: PackageReadyParam) {
         if (!param.isFirstPackage) return
+        if (param.packageName == GboardHook.PACKAGE) GboardHook.hook(param)
         hooks.filter { param.packageName in it.targetPackages }.forEach { it.hook(param) }
     }
 }

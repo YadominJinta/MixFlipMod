@@ -31,6 +31,8 @@
     <string name="pref_system_flip_continuity_summary">覆盖系统设置，所有应用合盖继续使用</string>
     <string name="pref_system_flip_ime_pkg">外屏输入法</string>
     <string name="pref_system_flip_ime_insets_fix">修复外屏键盘弹出时画面上移</string>
+    <string name="pref_system_gboard_cutout_fix">外屏摄像头避让</string>
+    <string name="pref_system_gboard_cutout_fix_summary">摄像头左上时在其下方全宽显示，右下时侧边避让。需同时勾选系统框架和 Gboard 作用域，更新后重新加载系统框架</string>
     <string name="pref_system_flip_ime_insets_fix_summary">修复默认或缩放模式下，旋转外屏后输入框消失的问题。更新模块后需重启手机，开关后重新打开应用</string>
     <string name="ime_select_default">默认</string>
     <string name="pref_flip_screen_mode">外屏应用渲染模式</string>

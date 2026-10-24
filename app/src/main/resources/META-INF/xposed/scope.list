@@ -1,4 +1,5 @@
 system
+com.google.android.inputmethod.latin
 com.android.calendar
 com.android.contacts
 com.android.deskclock

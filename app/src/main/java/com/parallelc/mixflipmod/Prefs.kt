@@ -9,6 +9,7 @@ object Prefs {
     const val SYSTEM_FLIP_SCREEN_MODE  = "system_flip_screen_mode"
     const val SYSTEM_FLIP_IME_PKG      = "system_flip_ime_pkg"
     const val SYSTEM_FLIP_IME_INSETS_FIX = "system_flip_ime_insets_fix"
+    const val SYSTEM_GBOARD_CUTOUT_FIX = "system_gboard_cutout_fix"
 
     // com.android.systemui
     const val SYSUI_NOTIFICATION       = "sysui_notification"
