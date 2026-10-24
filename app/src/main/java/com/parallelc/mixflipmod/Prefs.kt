@@ -8,6 +8,7 @@ object Prefs {
     const val SYSTEM_FLIP_CONTINUITY   = "system_flip_continuity"
     const val SYSTEM_FLIP_SCREEN_MODE  = "system_flip_screen_mode"
     const val SYSTEM_FLIP_IME_PKG      = "system_flip_ime_pkg"
+    const val SYSTEM_FLIP_IME_INSETS_FIX = "system_flip_ime_insets_fix"
 
     // com.android.systemui
     const val SYSUI_NOTIFICATION       = "sysui_notification"

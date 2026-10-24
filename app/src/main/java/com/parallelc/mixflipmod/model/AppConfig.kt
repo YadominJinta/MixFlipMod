@@ -114,6 +114,7 @@ private val systemFrameworkConfig = AppConfig(
     prefs = listOf(
         PrefSpec.Switch(Prefs.SYSTEM_COMPAT_CONFIG, R.string.pref_system_compat_config),
         PrefSpec.Switch(Prefs.SYSTEM_FLIP_CONTINUITY, R.string.pref_system_flip_continuity, R.string.pref_system_flip_continuity_summary),
+        PrefSpec.Switch(Prefs.SYSTEM_FLIP_IME_INSETS_FIX, R.string.pref_system_flip_ime_insets_fix, R.string.pref_system_flip_ime_insets_fix_summary),
         PrefSpec.OptionSelect(
             Prefs.SYSTEM_FLIP_IME_PKG,
             R.string.pref_system_flip_ime_pkg,

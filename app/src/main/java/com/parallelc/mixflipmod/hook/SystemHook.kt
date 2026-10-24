@@ -10,6 +10,8 @@ import android.content.res.Configuration
 import android.os.Bundle
 import android.provider.Settings
 import android.view.WindowManager
+import android.view.DisplayCutout
+import android.view.WindowInsets
 import com.parallelc.mixflipmod.Prefs
 import com.parallelc.mixflipmod.Prefs.FlipScreenMode
 import com.parallelc.mixflipmod.hook.util.after
@@ -34,6 +36,7 @@ object SystemHook {
         safeHook("[android] ${Prefs.SYSTEM_FLIP_CONTINUITY}") { hookFlipContinuity(param) }
         safeHook("[android] ${Prefs.SYSTEM_FLIP_IME_PKG}") { hookFlipInputMethod(param) }
         safeHook("[android] ${Prefs.SYSTEM_FLIP_SCREEN_MODE}") { hookFlipScreenMode(param) }
+        safeHook("[android] ${Prefs.SYSTEM_FLIP_IME_INSETS_FIX}") { hookFlipImeInsetsFix(param) }
     }
 
     // ── Prefs cache ──────────────────────────────────────────────
@@ -51,6 +54,7 @@ object SystemHook {
     private fun refreshSystemPrefsCache(prefs: SharedPreferences) {
         systemCompatConfigEnabled = prefs.getBoolean(Prefs.SYSTEM_COMPAT_CONFIG, false)
         systemFlipContinuityEnabled = prefs.getBoolean(Prefs.SYSTEM_FLIP_CONTINUITY, false)
+        systemFlipImeInsetsFixEnabled = prefs.getBoolean(Prefs.SYSTEM_FLIP_IME_INSETS_FIX, false)
         flipInputMethodPackageCache = normalizeFlipInputMethodPackage(
             prefs.getString(Prefs.SYSTEM_FLIP_IME_PKG, Prefs.DEFAULT_FLIP_IME_PKG)
         )
@@ -75,6 +79,9 @@ object SystemHook {
             }
             key == Prefs.SYSTEM_FLIP_CONTINUITY -> {
                 systemFlipContinuityEnabled = prefs.getBoolean(key, false)
+            }
+            key == Prefs.SYSTEM_FLIP_IME_INSETS_FIX -> {
+                systemFlipImeInsetsFixEnabled = prefs.getBoolean(key, false)
             }
             key == Prefs.SYSTEM_FLIP_IME_PKG -> {
                 flipInputMethodPackageCache = normalizeFlipInputMethodPackage(
@@ -356,6 +363,53 @@ object SystemHook {
         }
     }
 
+    // Xiaomi consumes DisplayCutout in size-compat windows, but leaves its InsetsSource.
+    // At ROTATION_180 the scaled left source overlaps the unscaled window origin.
+    // Visible insets then contain a left inset absent from content insets, triggering
+    // ViewRootImpl.scrollToRectOrFocus and panning an already IME-aware app a second time.
+    private fun hookFlipImeInsetsFix(param: SystemServerStartingParam) {
+        val windowState = param.classLoader.findClass("com.android.server.wm.WindowState")
+        val insetsState = param.classLoader.findClass("android.view.InsetsState")
+        val copyState = insetsState.getConstructor(insetsState, Boolean::class.javaPrimitiveType!!)
+        val sizeCompatStub = param.classLoader.findClass("android.sizecompat.MiuiAppSizeCompatModeStub")
+        val getSizeCompatStub = sizeCompatStub.method("get")
+        var failureLogged = false
+
+        // Invalidate compiled callers so getCompatInsetsState cannot be bypassed
+        // by an inlined copy in the client inset dispatch path.
+        module!!.deoptimize(windowState.method("fillInsetsState", insetsState, Boolean::class.javaPrimitiveType!!))
+
+        // This feeds both initial relayout and later asynchronous inset updates. Work
+        // on a copy: the original may be shared with other windows or the display.
+        hook(windowState.method("getCompatInsetsState"), after { chain, result ->
+            if (!systemFlipImeInsetsFixEnabled || result == null) return@after result
+            runCatching {
+                if (getSizeCompatStub.invoke(null)?.callMethod("isFlipFolded") != true) return@runCatching result
+                val window = chain.thisObject ?: return@runCatching result
+                if (window.callMethod("getDisplayId") != 0) return@runCatching result
+                val activity = window.getField("mActivityRecord") ?: return@runCatching result
+                if (activity.getField("mHyperStub")?.callMethod("inMiuiSizeCompatMode") != true) return@runCatching result
+                val cutout = result.callMethod("getDisplayCutout") as? DisplayCutout ?: return@runCatching result
+                if (cutout.callMethod("isEmpty") != true) return@runCatching result
+                val cutoutType = WindowInsets.Type.displayCutout()
+                val sourceCount = result.callMethod("sourceSize") as Int
+                val indices = (sourceCount - 1 downTo 0).filter { index ->
+                    result.callMethod("sourceAt", index)?.callMethod("getType") == cutoutType
+                }
+                if (indices.isEmpty()) return@runCatching result
+                copyState.newInstance(result, true).also { copy ->
+                    indices.forEach { copy.callMethod("removeSourceAt", it) }
+                }
+            }.getOrElse {
+                if (!failureLogged) {
+                    failureLogged = true
+                    log("flip IME insets fix failed", it)
+                }
+                result
+            }
+        })
+    }
+
     private fun normalizeFlipInputMethodPackage(packageName: String?): String {
         return packageName
             ?.trim()
@@ -445,6 +499,8 @@ object SystemHook {
     private var systemCompatConfigEnabled = false
     @Volatile
     private var systemFlipContinuityEnabled = false
+    @Volatile
+    private var systemFlipImeInsetsFixEnabled = false
     @Volatile
     private var flipInputMethodPackageCache = Prefs.DEFAULT_FLIP_IME_PKG
     @Volatile
